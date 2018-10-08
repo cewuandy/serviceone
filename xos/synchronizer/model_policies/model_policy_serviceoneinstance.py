@@ -34,19 +34,15 @@ class ServiceOneInstancePolicy(Policy):
         compute_service = KubernetesService.objects.first()
         compute_service_instance_class = Service.objects.get(id=compute_service.id).get_service_instance_class()
 
-        serviceone = service_instance.owner.leaf_model
+        exampleservice = service_instance.owner.leaf_model
 
-        slice = serviceone.slices.first()
+        slice = exampleservice.slices.first()
 
         image = slice.default_image
 
-        name = "serviceone-%s" % service_instance.id
-        compute_service_instance = compute_service_instance_class(slice=slice,owner=compute_service,image=image, name=name,no_sync=True)
-
+        name="serviceone-%s" % service_instance.id
+        compute_service_instance = compute_service_instance_class(slice=slice, owner=compute_service, image=image, name=name, no_sync=True)
         compute_service_instance.save()
-
-        service_instance.compute_instance = compute_service_instance
-        service_instance.save(update_fields=["compute_instance"])
 
     def handle_delete(self, service_instance):
         log.info("handle_delete")
