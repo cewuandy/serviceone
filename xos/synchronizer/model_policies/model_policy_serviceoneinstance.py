@@ -31,7 +31,31 @@ class ServiceOneInstancePolicy(Policy):
         return self.handle_update(service_instance)
 
     def handle_update(self, service_instance):
-        log.info("handle_update")
+        compute_service = KubernetesService.objects.first()
+        compute_service_instance_class = Service.objects.get(
+            id=compute_service.id).get_service_instance_class()
+
+        serviceone = service_instance.owner.leaf_model
+
+        slice = serviceone.slices.first()
+
+        image = slice.default_image
+
+        name = "serviceone-%s" % service_instance.id
+        compute_service_instance = compute_service_instance_class(slice=slice,
+                                                                  owner=compute_service,
+                                                                  image=image, name=name,
+                                                                  no_sync=True)
+        compute_service_instance.save()
+
+        service_instance.compute_instance = compute_service_instance
+        service_instance.save(update_fields=["compute_instance"])
 
     def handle_delete(self, service_instance):
         log.info("handle_delete")
+        if service_instance.compute_instance:
+            log.info("has a compute_instance")
+            service_instance.compute_instance.delete()
+            service_instance.compute_instance = None
+            # TODO: I'm not sure we can save things that are being deleted...
+            service_instance.save(update_fields=["compute_instance"])
