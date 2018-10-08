@@ -36,9 +36,9 @@ class ServiceOneInstancePolicy(Policy):
 
         exampleservice = service_instance.owner.leaf_model
 
-        slice = exampleservice.slices.first()
+        slice = Slice.objects.filter(name="myslice")[0]
 
-        image = slice.default_image
+        image = Image.objects.filter(name="cewuandy/apache2")[0]
 
         name="serviceone-%s" % service_instance.id
         compute_service_instance = compute_service_instance_class(slice=slice, owner=compute_service, image=image, name=name, no_sync=True)
