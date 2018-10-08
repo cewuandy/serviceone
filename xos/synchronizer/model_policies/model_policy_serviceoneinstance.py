@@ -34,8 +34,6 @@ class ServiceOneInstancePolicy(Policy):
         compute_service = KubernetesService.objects.first()
         compute_service_instance_class = Service.objects.get(id=compute_service.id).get_service_instance_class()
 
-        exampleservice = service_instance.owner.leaf_model
-
         slice = Slice.objects.filter(name="myslice")[0]
 
         image = Image.objects.filter(name="cewuandy/apache2")[0]
