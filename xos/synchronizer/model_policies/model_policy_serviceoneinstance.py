@@ -25,6 +25,7 @@ log = create_logger(Config().get('logging'))
 
 
 class ServiceOneInstancePolicy(Policy):
+    model_name = "ServiceOneInstance"
 
     def handle_create(self, service_instance):
         log.info("handle_create")
