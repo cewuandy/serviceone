@@ -1,17 +1,3 @@
-# Copyright 2017-present Open Networking Foundation
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import base64
 import jinja2
 import json
@@ -31,19 +17,18 @@ class ServiceOneInstancePolicy(Policy):
         return self.handle_update(service_instance)
 
     def handle_update(self, service_instance):
-        compute_service = KubernetesService.objects.first()
-        service_instance_class = Service.objects.get(id=compute_service.id).get_service_instance_class()
+            compute_service = KubernetesService.objects.first()
+            compute_service_instance_class = Service.objects.get(id=compute_service.id).get_service_instance_class()
 
-        exampleservice = service_instance.owner.leaf_model
+            exampleservice = service_instance.owner.leaf_model
 
-        slice = exampleservice.slices.first()
+            slice = exampleservice.slices.first()
 
-        image = slice.default_image
+            image = slice.default_image
 
-        name = "serviceone-%s" % service_instance.id
-        service_instance = service_instance_class(slice=slice,owner=compute_service,image=image,name=name,no_sync=True)
-
-        service_instance.save()
+            name="serviceone-%s" % service_instance.id
+            compute_service_instance = compute_service_instance_class(slice=slice, owner=compute_service, image=image, name=name, no_sync=True)
+            compute_service_instance.save()
 
     def handle_delete(self, service_instance):
         log.info("handle_delete")
