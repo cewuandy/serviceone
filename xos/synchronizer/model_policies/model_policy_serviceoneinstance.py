@@ -21,7 +21,7 @@ class ServiceOneInstancePolicy(Policy):
         slice = Slice.objects.filter(name="serviceone")[0]
         image = Image.objects.filter(name="cewuandy/apache2")[0]
         name="serviceone-%s" % service_instance.id
-        compute_service_instance = KubernetesInstanceService(slice=slice, owner=compute_service, image=image, name=name, no_sync=True)
+        compute_service_instance = KubernetesServiceInstance(slice=slice, owner=compute_service, image=image, name=name, no_sync=True)
         compute_service_instance.save()
 
     def handle_delete(self, service_instance):
