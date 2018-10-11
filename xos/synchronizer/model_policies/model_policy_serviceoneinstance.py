@@ -28,87 +28,27 @@ class ServiceOneInstancePolicy(Policy):
     model_name = "ServiceOneInstance"
 
     def handle_create(self, service_instance):
-        log.info("handle_create")
         return self.handle_update(service_instance)
 
-    def render_index(self, service_instance):
-        service = service_instance.owner.leaf_model
-
-        fields = {}
-        fields['tenant_message'] = service_instance.tenant_message
-        fields['service_message'] = service.service_message
-
-        images=[]
-        for image in service_instance.embedded_images.all():
-            images.append({"name": image.name,
-                           "url": image.url})
-        fields["images"] = images
-
-        template_fn = os.path.join(os.path.abspath(os.path.dirname(os.path.realpath(__file__))), "index.html.j2")
-        template = jinja2.Template(open(template_fn).read())
-
-        return template.render(fields)
-
     def handle_update(self, service_instance):
-        if not service_instance.compute_instance:
-            # TODO: Break dependency
-            compute_service = KubernetesService.objects.first()
-            compute_service_instance_class = Service.objects.get(id=compute_service.id).get_service_instance_class()
+        compute_service = KubernetesService.objects.first()
+        service_instance_class = Service.objects.get(id=compute_service.id).get_service_instance_class()
 
-            exampleservice = service_instance.owner.leaf_model
+        exampleservice = service_instance.owner.leaf_model
 
-            # TODO: What if there is the wrong number of slices?
-            slice = exampleservice.slices.first()
+        slice = exampleservice.slices.first()
 
-            # TODO: What if there is no default image?
-            image = slice.default_image
+        image = slice.default_image
 
-            name="serviceone-%s" % service_instance.id
-            compute_service_instance = compute_service_instance_class(slice=slice, owner=compute_service, image=image, name=name, no_sync=True)
-            compute_service_instance.save()
+        name = "serviceone-%s" % service_instance.id
+        service_instance = service_instance_class(slice=slice,owner=compute_service,image=image,name=name,no_sync=True)
 
-            # Create a configmap and attach it to the compute instance
-            data = {"index.html": self.render_index(service_instance)}
-            cfmap = KubernetesConfigMap(name="serviceone-map-%s" % service_instance.id,
-                                        trust_domain=slice.trust_domain,
-                                        data=json.dumps(data))
-            cfmap.save()
-            cfmap_mnt = KubernetesConfigVolumeMount(config=cfmap,
-                                                    service_instance=compute_service_instance,
-                                                    mount_path="/usr/local/apache2/htdocs")
-            cfmap_mnt.save()
-
-            # Create a secret and attach it to the compute instance
-            data = {"service_secret.txt": base64.b64encode(str(exampleservice.service_secret)),
-                    "tenant_secret.txt": base64.b64encode(str(service_instance.tenant_secret))}
-            secret = KubernetesSecret(name="serviceone-secret-%s" % service_instance.id,
-                                      trust_domain=slice.trust_domain,
-                                      data=json.dumps(data))
-            secret.save()
-            secret_mnt = KubernetesSecretVolumeMount(secret=secret, service_instance=compute_service_instance, mount_path="/usr/local/apache2/secrets")
-            secret_mnt.save()
-
-            compute_service_instance.no_sync = False
-            compute_service_instance.save(update_fields=["no_sync"])
-
-            service_instance.compute_instance = compute_service_instance
-            service_instance.save(update_fields=["compute_instance"])
-        else:
-            compute_instance = service_instance.compute_instance
-            mnt = compute_instance.leaf_model.kubernetes_config_volume_mounts.first()
-            config = mnt.config
-            new_data = json.dumps({"index.html": self.render_index(service_instance)})
-            if (new_data != config.data):
-                config.data = new_data
-                config.save(always_update_timestamp=True)
-                # Force the Kubernetes syncstep
-                compute_instance.save(always_update_timestamp=True)
+        service_instance.save()
 
     def handle_delete(self, service_instance):
         log.info("handle_delete")
-        if service_instance.compute_instance:
-            log.info("has a compute_instance")
-            service_instance.compute_instance.delete()
-            service_instance.compute_instance = None
-            # TODO: I'm not sure we can save things that are being deleted...
-            service_instance.save(update_fields=["compute_instance"])
+        log.info("has a compute_instance")
+        service_instance.compute_instance.delete()
+        service_instance.compute_instance = None
+        # TODO: I'm not sure we can save things that are being deleted...
+        service_instance.save(update_fields=["compute_instance"])
