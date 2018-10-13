@@ -19,8 +19,12 @@ class ServiceOneInstancePolicy(Policy):
     def handle_update(self, service_instance):
         compute_service = KubernetesService.objects.first()
         compute_service_instance_class = Service.objects.get(id=compute_service.id).get_service_instance_class()
-        slice = "serviceone"
-        image = "httpd"
+
+        serviceone = service_instance.owner.leaf_model
+
+        slice = serviceone.slices.first()
+        image = slice.default_image
+
         name="serviceone-%s" % service_instance.id
         instance = compute_service_instance_class(slice=slice, owner=compute_service, image=image, name=name, no_sync=True)
         instance.save()
