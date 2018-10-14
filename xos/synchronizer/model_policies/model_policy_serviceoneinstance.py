@@ -17,25 +17,15 @@ class ServiceOneInstancePolicy(Policy):
         return self.handle_update(service_instance)
 
     def handle_update(self, service_instance):
-        # compute_service = KubernetesService.objects.first()
-        # compute_service_instance_class = Service.objects.get(id=compute_service.id).get_service_instance_class()
-
-        # serviceone = service_instance.owner.leaf_model
-
-        # slice = serviceone.slices.first()
-        # image = slice.default_image
-
-        # name="serviceone-%s" % service_instance.id
-        # instance = compute_service_instance_class(slice=slice, owner=compute_service, image=image, name=name, no_sync=True)
-        # instance.save()
-
-        log.info("handle_update serviceone")
         compute_service = KubernetesService.objects.first()
-        compute_service_instance_class = Service.objects.get(id=compute_service.id).get_service_instance_class()
+
+        serviceone = service_instance.owner.leaf_model
+
         slice = Slice.objects.filter(name="serviceone")[0]
         image = Image.objects.filter(name="cewuandy/apache2")[0]
+
         name="serviceone-%s" % service_instance.id
-        instance = compute_service_instance_class(slice=slice, owner=compute_service, image=image, name=name, no_sync=False)
+        instance = compute_service_instance_class(slice=slice, owner=compute_service, image=image, name=name, no_sync=True)
         instance.save()
 
     def handle_delete(self, service_instance):
